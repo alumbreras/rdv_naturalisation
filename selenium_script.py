@@ -1,4 +1,8 @@
-#
+# A script that helps you get a rendez-vous to ask for French citizenship. 
+# It makes a request every N minutes to the Préfecture de la Haute-Garonne 
+# Author: alberto (d0t) lumbreras (@t) gmail (d0t) com
+
+
 # Comments: install geckodriver executable in /usr/local/bin or 
 # somewhere else as long as it is included in the PATH variable.
 # This is the most painful part for regular users, since the installation 
@@ -31,7 +35,14 @@ from selenium.common.exceptions import NoSuchElementException
 # For most regular (Windows) users, you can remove the lines containing SENDMAIL
 # it will not send any email, but the song is enough for you to rush over the computer 
 # and end the process manually (enter your data and so on)
-SENDMAIL    = "/usr/sbin/ssmtp -v alberto.lumbreras@gmail.com < ./mail.txt"
+
+email = """To: me\n
+		   From: me\n
+		   Subject: Slot available!\n\n
+		   Hurry up!\n
+		   http://haute-garonne.gouv.fr/booking/create/7736/2"""
+
+#SENDMAIL    = f"/usr/sbin/ssmtp -v <email@email.net> < {email}"
 PLAYSONG    = "aplay ./marseillaise.wav &"
 url         = "http://www.haute-garonne.gouv.fr/booking/create/7736/1"
 buttons     = ["planning14500", "planning14510", "planning14520", "planning16456", "planning17481"]
@@ -88,7 +99,7 @@ while(True):
 				
 				# send alerts
 				os.system(PLAYSONG)
-				os.system(SENDMAIL)		
+				#os.system(SENDMAIL)		
 				break
 
 			# register failure
@@ -124,3 +135,4 @@ while(True):
 	browser.close()
 		
 print("End loop because target page has been reached")
+
