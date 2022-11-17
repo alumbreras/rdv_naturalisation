@@ -1,5 +1,5 @@
 # A script that helps you get a rendez-vous to ask for French citizenship. 
-# It makes a request every N minutes to the Préfecture de la Haute-Garonne 
+# It makes a request every N minutes to the Préfecture 
 # Author: alberto (d0t) lumbreras (@t) gmail (d0t) com
 
 
@@ -30,28 +30,37 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.common.exceptions import NoSuchElementException
 
+# List of some known urls from the different préfectures
+URL_93_1st = "https://www.seine-saint-denis.gouv.fr/booking/create/13303/1"
+URL_93_2nd = "https://www.seine-saint-denis.gouv.fr/booking/create/13303/2"
+URL_31_1st = "http://www.haute-garonne.gouv.fr/booking/create/7736/1"
+URL_31_2nd = "http://haute-garonne.gouv.fr/booking/create/7736/2"
 
-# Adapt this to your case (email, location of sound file...)
-# For most regular (Windows) users, you can remove the lines containing SENDMAIL
-# it will not send any email, but the song is enough for you to rush over the computer 
-# and end the process manually (enter your data and so on)
+# We need to click a button whose html id is different in each préfecture.
+# We need its id so that our scripts knows where to click.
+BUTTONS_31 = ["planning39592"]
+BUTTONS_93 = ["planning16622"]
 
-email = """To: me\n
-		   From: me\n
-		   Subject: Slot available!\n\n
-		   Hurry up!\n
-		   http://haute-garonne.gouv.fr/booking/create/7736/2"""
+# Select the variables according to your prefecture
+URL_1st = URL_93_1st
+URL_2nd = URL_93_2nd 
+BUTTONS = BUTTONS_93
 
-#SENDMAIL    = f"/usr/sbin/ssmtp -v <email@email.net> < {email}"
+# Notification variables
+EMAIL_ADDRESS = "alberto.lumbreras+spam@gmail.com" # Insert your e-mail
+EMAIL_CONTENT = f"""To: me\n
+					From: me\n
+					Subject: Slot available!\n\n
+					Hurry up!\n
+					{URL_2nd}"""
+SENDMAIL    = f"/usr/sbin/ssmtp -v <{EMAIL_ADDRESS}> < {EMAIL_CONTENT}"
 PLAYSONG    = "aplay ./marseillaise.wav &"
-url         = "http://www.haute-garonne.gouv.fr/booking/create/7736/1"
-buttons     = ["planning14500", "planning14510", "planning14520", "planning16456", "planning17481"]
 
-# Each minute
-TIMEBUTTONS = 120
-TIMELOOP = 0
-CANDIDATE_MINUTES = range(0,59)
-BLOCKED_TIME = 90
+# Query strategies (times are in seconds)
+# TIMEBUTTONS: if multiple buttons available in the website, time to wait to click next button (prevents being blocked)
+# TIMELOOP: once all buttons have been tried, time until next round.
+# CANDIDATE_MINUTES: on which minutes (of each hour) you want the script to try.
+# BLOCKED_TIME: time to wait until next try once you are blocked.
 
 # Standard strategy
 TIMEBUTTONS = 25
@@ -66,6 +75,15 @@ TIMELOOP = 60
 CANDIDATE_MINUTES = [10,30,50]
 BLOCKED_TIME = 60
 
+# Aggresive strategy. Try each minute.
+# This was banned in some prefectures, blocking your future requests for some minutes.
+# If this is your case you need to use a less aggressive strategy
+TIMEBUTTONS = 120
+TIMELOOP = 0
+CANDIDATE_MINUTES = range(0,59)
+BLOCKED_TIME = 90 
+
+
 while(True):
 	call(['pkill', 'firefox'])
 	print("Waiting for minute", CANDIDATE_MINUTES)
@@ -75,23 +93,30 @@ while(True):
 
 	print("*****************************************************")
 	print("Openning browser at", dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-	
-	#browser = webdriver.Firefox(proxy=proxy)
-	browser = webdriver.Firefox()
-	#break
+
+	driver = webdriver.Chrome()
 	
 	try:
-		for i in range(len(buttons)):
-			button = buttons[i]
+		for i in range(len(BUTTONS)):
+			button = BUTTONS[i]
 			print(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-			browser.get(url)
-			element = browser.find_element_by_id(button)
-			element.click()
-			element = browser.find_element_by_name("nextButton")
-			element.click()
-			print(str(browser.current_url) + "." * np.random.poisson(3,1)[0])
+			driver.get(URL_1st)
 
-			if(browser.current_url[-1:]=="3"):
+			# New
+			element = driver.find_element("id", button)
+			element.click()
+			element = driver.find_element("name", "nextButton")
+			element.click()
+			
+			# Old
+			# element = driver.find_element_by_id(button)
+			# element.click()
+			# element = driver.find_element_by_name("nextButton")
+			# element.click()
+			
+			print(str(driver.current_url) + "." * np.random.poisson(3,1)[0])
+
+			if(driver.current_url[-1:]=="3"):
 				
 				# register success
 				with open("success.txt", 'a') as f:
@@ -99,7 +124,7 @@ while(True):
 				
 				# send alerts
 				os.system(PLAYSONG)
-				#os.system(SENDMAIL)		
+				os.system(SENDMAIL) # comment out this line if you are in Windows, since it won't work	
 				break
 
 			# register failure
@@ -108,7 +133,7 @@ while(True):
 				
 			secs = np.random.poisson(TIMEBUTTONS,1)[0]
 			print("- Button", i,  "Next button in", TIMEBUTTONS, "seconds")
-			time.sleep(secs) # time between buttons
+			time.sleep(secs) # time between 
 			
 		else:
 			# Didn't find a slot in the calendar through any button
