@@ -102,17 +102,10 @@ while(True):
 			print(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 			driver.get(URL_1st)
 
-			# New
 			element = driver.find_element("id", button)
 			element.click()
 			element = driver.find_element("name", "nextButton")
 			element.click()
-			
-			# Old
-			# element = driver.find_element_by_id(button)
-			# element.click()
-			# element = driver.find_element_by_name("nextButton")
-			# element.click()
 			
 			print(str(driver.current_url) + "." * np.random.poisson(3,1)[0])
 
@@ -151,7 +144,7 @@ while(True):
 			f.write(dt.datetime.now().strftime("blocked\t%Y-%m-%d %H:%M:%S\n"))
 		
 		print("Blocked! Close browser and sleep...")
-		browser.close()
+		driver.close()
 		
 		call(['pkill', 'firefox'])
 		time.sleep(BLOCKED_TIME)
