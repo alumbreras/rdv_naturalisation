@@ -54,7 +54,6 @@ PLAYSONG    = "afplay ./marseillaise.wav &"
 # < 15 queries / minute
 # maybe the threshold is 15 queries every 15 mins
 
-
 TIMEBUTTONS = 0
 BLOCKED_TIME = 60*30
 
@@ -100,12 +99,10 @@ while(True):
 			element.click()
 			element = driver.find_element("name", "nextButton")
 			element.click()
-			
-			
+
 			print(str(driver.current_url) + "." * np.random.poisson(3,1)[0])
 
 			if(driver.current_url[-1:]=="3"):
-				
 				# register success
 				with open("success.txt", 'a') as f:
 					f.write(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\t" + MSG_FREE_SLOT_YES + "\n")
@@ -143,7 +140,6 @@ while(True):
 			continue
 
 	except Exception as e:
-		
 		# register success
 		with open("success.txt", 'a') as f:
 			f.write(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\t" + MSG_BLOCKED + "\n")
