@@ -69,7 +69,7 @@ TIMELOOP = 60
 CANDIDATE_MINUTES = [10,30,50]
 
 # Testing strategy
-TIMELOOP = 60
+TIMELOOP = 10
 CANDIDATE_MINUTES = range(0,59)
 
 call(['pkill', 'chrome'])
@@ -125,7 +125,7 @@ while(True):
 				time.sleep(60)
 			
 			# Reset the counter each minute 
-			if (dt.datetime.now() - last_minute.total_seconds()) >= 60:
+			if (dt.datetime.now() - last_minute).total_seconds() >= 60:
 				last_minute = dt.datetime.now()
 
 			secs = np.random.poisson(TIMEBUTTONS,1)[0]
@@ -141,6 +141,7 @@ while(True):
 
 	except Exception as e:
 		# register success
+		print(e)
 		with open("success.txt", 'a') as f:
 			f.write(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\t" + MSG_BLOCKED + "\n")
 		
