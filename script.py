@@ -46,18 +46,25 @@ PLAYSONG    = "afplay ./marseillaise.wav &"
 TIMEBUTTONS = 0
 BLOCKED_TIME = 60
 
-# Standard strategy
-TIMELOOP = 60
-CANDIDATE_MINUTES = [10,30,50]
-
 # Aggresive strategy. Try each minute.
 # This was banned in some prefectures, blocking your future requests for some minutes.
 # If this is your case you need to use a less aggressive strategy
-TIMELOOP = 0
+# TIMELOOP = 0
+# CANDIDATE_MINUTES = range(0,59)
+
+# Standard strategy. Candidate minutes are 10, 30, 50, 
+# since I have observed this are the moments when the calendar is freed if there has been some cancelation
+TIMELOOP = 60
+CANDIDATE_MINUTES = [10,30,50]
+
+# Testing strategy
+TIMELOOP = 60
 CANDIDATE_MINUTES = range(0,59)
 
-while(True):
-	call(['pkill', 'chrome'])
+call(['pkill', 'chrome'])
+driver = webdriver.Chrome()
+
+while(True):	
 	print("Waiting for minute", CANDIDATE_MINUTES)
 	while (dt.datetime.now().minute not in CANDIDATE_MINUTES):
 		time.sleep(10) 
@@ -66,8 +73,6 @@ while(True):
 	print("*****************************************************")
 	print("Openning browser at", dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-	driver = webdriver.Chrome()
-	
 	try:
 		for i in range(len(BUTTONS)):
 			button = BUTTONS[i]
@@ -90,11 +95,14 @@ while(True):
 				# send alerts
 				os.system(PLAYSONG)
 				os.system(SENDMAIL) # comment out this line if you are in Windows, since it won't work	
+				
+				print("End loop because target page has been reached")
 				break
 
-			# register failure
-			with open("success.txt", 'a') as f:
-				f.write(dt.datetime.now().strftime("no\t%Y-%m-%d %H:%M:%S") + "\t" + button + "\n")
+			else: 
+				# register failure
+				with open("success.txt", 'a') as f:
+					f.write(dt.datetime.now().strftime("no\t%Y-%m-%d %H:%M:%S") + "\t" + button + "\n")
 				
 			secs = np.random.poisson(TIMEBUTTONS,1)[0]
 			print("- Button", i,  "Next button in", TIMEBUTTONS, "seconds")
@@ -106,8 +114,6 @@ while(True):
 			print("Next loop in ", TIMELOOP, "seconds")
 			time.sleep(secs)
 			continue
-		
-		break
 
 	except Exception as e:
 		
@@ -115,14 +121,7 @@ while(True):
 		with open("success.txt", 'a') as f:
 			f.write(dt.datetime.now().strftime("blocked\t%Y-%m-%d %H:%M:%S\n"))
 		
-		print("Blocked! Close browser and sleep...")
-		driver.close()
-		)
-		call(['pkill', 'chrome'])
+		print(f"Blocked! Waiting {BLOCKED_TIME} seconds until next round")
 		time.sleep(BLOCKED_TIME)
-		continue
-
-	driver.close()
-		
-print("End loop because target page has been reached")
+		continue	
 
