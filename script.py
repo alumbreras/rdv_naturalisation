@@ -21,6 +21,13 @@ URL_1st = URL_93_1st
 URL_2nd = URL_93_2nd 
 BUTTONS = BUTTONS_93
 
+# Message to log when success, fail, or blocked.
+MSG_FREE_SLOT_YES = "free_slot_yes"
+MSG_FREE_SLOT_NO = "free_slot_no"
+MSG_BLOCKED = "blocked"
+
+
+
 # Notification: e-mail
 # For Windows, see https://www.howtogeek.com/120011/stupid-geek-tricks-how-to-send-email-from-the-command-line-in-windows-without-extra-software/
 EMAIL_ADDRESS = "alberto.lumbreras+spam@gmail.com" # Insert your e-mail
@@ -43,8 +50,13 @@ PLAYSONG    = "afplay ./marseillaise.wav &"
 # CANDIDATE_MINUTES: on which minutes (of each hour) you want the script to try.
 # BLOCKED_TIME: time to wait until next try once you are blocked.
 
+# Accoring to my logs, the system accepts 
+# < 15 queries / minute
+# maybe the threshold is 15 queries every 15 mins
+
+
 TIMEBUTTONS = 0
-BLOCKED_TIME = 60
+BLOCKED_TIME = 60*30
 
 # Aggresive strategy. Try each minute.
 # This was banned in some prefectures, blocking your future requests for some minutes.
@@ -73,16 +85,22 @@ while(True):
 	print("*****************************************************")
 	print("Openning browser at", dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
+	# Monitor the throughput so that in the key minutes we don't query more than 5 times
+	MAX_ATTEMPTS_IN_LAST_MINUTE = 5
+	attempts_in_last_minute = 0
+	last_minute = dt.datetime.now()
+
 	try:
 		for i in range(len(BUTTONS)):
 			button = BUTTONS[i]
 			print(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 			driver.get(URL_1st)
-
+			
 			element = driver.find_element("id", button)
 			element.click()
 			element = driver.find_element("name", "nextButton")
 			element.click()
+			
 			
 			print(str(driver.current_url) + "." * np.random.poisson(3,1)[0])
 
@@ -90,7 +108,7 @@ while(True):
 				
 				# register success
 				with open("success.txt", 'a') as f:
-					f.write(dt.datetime.now().strftime("yes\t%Y-%m-%d %H:%M:%S") + "\t" + button + "\n")
+					f.write(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\t" + MSG_FREE_SLOT_YES + "\n")
 				
 				# send alerts
 				os.system(PLAYSONG)
@@ -102,8 +120,17 @@ while(True):
 			else: 
 				# register failure
 				with open("success.txt", 'a') as f:
-					f.write(dt.datetime.now().strftime("no\t%Y-%m-%d %H:%M:%S") + "\t" + button + "\n")
-				
+					f.write(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\t" + MSG_FREE_SLOT_NO + "\n")
+
+			attempts_in_last_minute += 1
+			if attempts_in_last_minute >= MAX_ATTEMPTS_IN_LAST_MINUTE:
+				print("Reached MAX_ATTEMPTS_IN_LAST_MINUTE. 1 minute pause to prevent being blocked.")
+				time.sleep(60)
+			
+			# Reset the counter each minute 
+			if (dt.datetime.now() - last_minute.total_seconds()) >= 60:
+				last_minute = dt.datetime.now()
+
 			secs = np.random.poisson(TIMEBUTTONS,1)[0]
 			print("- Button", i,  "Next button in", TIMEBUTTONS, "seconds")
 			time.sleep(secs) # time between 
@@ -119,7 +146,7 @@ while(True):
 		
 		# register success
 		with open("success.txt", 'a') as f:
-			f.write(dt.datetime.now().strftime("blocked\t%Y-%m-%d %H:%M:%S\n"))
+			f.write(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\t" + MSG_BLOCKED + "\n")
 		
 		print(f"Blocked! Waiting {BLOCKED_TIME} seconds until next round")
 		time.sleep(BLOCKED_TIME)
